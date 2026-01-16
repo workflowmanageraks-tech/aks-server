@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Movie Library Single Page</title>
+<style>
+body{
+    margin:0;
+    font-family: Arial, sans-serif;
+    background:#121212;
+    color:#fff;
+}
+header{
+    background:#1f1f1f;
+    padding:15px;
+    text-align:center;
+}
+header input{
+    margin-top:10px;
+    padding:8px;
+    width:60%;
+    max-width:400px;
+    border:none;
+    border-radius:5px;
+}
+.category-bar{
+    display:flex;
+    justify-content:center;
+    gap:15px;
+    margin:15px 0;
+    flex-wrap: wrap;
+}
+.category-bar button{
+    padding:8px 16px;
+    border:none;
+    border-radius:5px;
+    background:#333;
+    color:#fff;
+    cursor:pointer;
+}
+.category-bar button.active, .category-bar button:hover{
+    background:#e50914;
+}
+.container{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:20px;
+    padding:20px;
+}
+.movie{
+    position: relative;
+    background:#1e1e1e;
+    border-radius:8px;
+    overflow:hidden;
+    text-align:center;
+    cursor:pointer;
+}
+.movie img{
+    width:100%;
+    height:260px;
+    object-fit:cover;
+    display:block;
+}
+.movie h3{
+    margin:10px 0;
+    position: absolute;
+    bottom:10px;
+    width:100%;
+    color:#fff;
+    background: rgba(0,0,0,0.5);
+    padding:5px 0;
+}
+footer{
+    text-align:center;
+    padding:10px;
+    background:#1f1f1f;
+    font-size:14px;
+}
+
+/* Description Page */
+#descPage{
+    display:none;
+    padding:20px;
+    text-align:center;
+}
+#descPage img{
+    width:250px;
+    height:350px;
+    object-fit:cover;
+    border-radius:8px;
+    margin-top:20px;
+}
+#descPage h1{
+    margin-top:20px;
+}
+#descPage p{
+    max-width:600px;
+    margin:20px auto;
+    font-size:18px;
+}
+#descPage video{
+    width:80%;
+    max-width:500px;
+    margin:15px 0;
+    border-radius:8px;
+}
+#descPage button{
+    padding:10px 18px;
+    border:none;
+    border-radius:5px;
+    background:#e50914;
+    color:#fff;
+    cursor:pointer;
+    margin:10px;
+}
+#backBtn{
+    background:#555;
+}
+#backBtn:hover{
+    background:#777;
+}
+</style>
+</head>
+<body>
+
+<!-- Main Page -->
+<div id="mainPage">
+<header>
+    <h1>Movie Library</h1>
+    <input type="text" id="search" placeholder="Search movie...">
+</header>
+
+<div class="category-bar" id="categoryBar"></div>
+<div class="container" id="movieContainer"></div>
+<footer>
+    Demo project – use only authorized content
+</footer>
+</div>
+
+<!-- Description Page -->
+<div id="descPage">
+    <img id="descImg" src="">
+    <h1 id="descTitle"></h1>
+    <p id="descText"></p>
+    <video id="descVideo" controls autoplay loop muted></video>
+    <br>
+    <button id="fullscreenBtn">Fullscreen</button>
+    <button id="downloadBtn">Download</button>
+    <button id="backBtn">Back</button>
+</div>
+
+<script>
+// === Movie Data ===
+// Replace trailer and download with your local or online video links
+const movies = [
+    { 
+        title: "Action Movie 1", 
+        image: "images/action1.jpg", 
+        download: "videos/action1.mp4",  
+        trailer: "videos/action1.mp4",   
+        category: "Action", 
+        description:"Exciting action movie with stunts and adventure." 
+    },
+    { 
+        title: "Comedy Movie 1", 
+        image: "images/comedy1.jpg", 
+        download: "videos/comedy1.mp4",
+        trailer: "videos/comedy1.mp4",
+        category: "Comedy", 
+        description:"Hilarious comedy to make you laugh." 
+    },
+    { 
+        title: "Horror Movie 1", 
+        image: "images/horror1.jpg", 
+        download: "videos/horror1.mp4",
+        trailer: "videos/horror1.mp4",
+        category: "Horror", 
+        description:"Scary horror movie that keeps you on edge." 
+    }
+];
+
+const mainPage = document.getElementById("mainPage");
+const descPage = document.getElementById("descPage");
+const container = document.getElementById("movieContainer");
+const search = document.getElementById("search");
+const categoryBar = document.getElementById("categoryBar");
+
+let currentCategory = "All";
+
+// Create category buttons
+const categories = ["All", ...new Set(movies.map(m => m.category))];
+categories.forEach(cat=>{
+    const btn = document.createElement("button");
+    btn.innerText = cat;
+    btn.className = cat==="All"?"active":"";
+    btn.addEventListener("click", ()=>{
+        currentCategory = cat;
+        updateActiveCategory(cat);
+        filterMovies();
+    });
+    categoryBar.appendChild(btn);
+});
+
+function updateActiveCategory(cat){
+    const buttons = categoryBar.querySelectorAll("button");
+    buttons.forEach(b=> b.classList.remove("active"));
+    buttons.forEach(b=> { if(b.innerText===cat) b.classList.add("active"); });
+}
+
+function filterMovies(){
+    const value = search.value.toLowerCase();
+    let filtered = movies;
+    if(currentCategory !== "All"){
+        filtered = filtered.filter(m => m.category===currentCategory);
+    }
+    filtered = filtered.filter(m => m.title.toLowerCase().includes(value));
+    showMovies(filtered);
+}
+
+function showMovies(list){
+    container.innerHTML="";
+    list.forEach(movie=>{
+        const div = document.createElement("div");
+        div.className="movie";
+        div.innerHTML=`
+            <img src="${movie.image}">
+            <h3>${movie.title}</h3>
+        `;
+        div.addEventListener("click", ()=> showDescription(movie));
+        container.appendChild(div);
+    });
+}
+
+// Show description page with trailer autoplay muted
+function showDescription(movie){
+    mainPage.style.display="none";
+    descPage.style.display="block";
+    document.getElementById("descImg").src = movie.image;
+    document.getElementById("descTitle").innerText = movie.title;
+    document.getElementById("descText").innerText = movie.description;
+    const video = document.getElementById("descVideo");
+    video.src = movie.trailer;
+    video.load();
+    video.play();
+    document.getElementById("downloadBtn").onclick = ()=> window.open(movie.download,"_blank");
+    document.getElementById("fullscreenBtn").onclick = ()=> video.requestFullscreen();
+}
+
+// Back button
+document.getElementById("backBtn").onclick = ()=>{
+    const video = document.getElementById("descVideo");
+    video.pause();
+    descPage.style.display="none";
+    mainPage.style.display="block";
+}
+
+search.addEventListener("keyup", filterMovies);
+showMovies(movies);
+</script>
+
+</body>
+</html>
